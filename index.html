@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seni sevaman, Muslima ❤️</title>
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#intro, #final {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+  background: #000;
+  z-index: 3;
+  transition: opacity .6s;
+}
+
+#intro h1, #final h1 {
+  color: #ff1744;
+  font-size: clamp(30px, 8vw, 65px);
+  text-shadow: 0 0 12px #ff003c, 0 0 35px #ff1744;
+  line-height: 1.35;
+}
+
+#intro p, #final p {
+  color: #ffb4c6;
+  letter-spacing: 2px;
+}
+
+#intro.hide, #final.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#reader {
+  position: fixed;
+  z-index: 2;
+  left: 50%;
+  top: 50%;
+  width: 96%;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  color: #ff244a;
+  font-weight: bold;
+  font-size: clamp(25px, 7vw, 48px);
+  text-shadow: 0 0 12px red, 0 0 30px #ff1744;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#reader.visible {
+  animation: read 1.15s ease-in-out forwards;
+}
+
+@keyframes read {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(.25);
+  }
+  30%, 70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(.8);
+  }
+}
+
+#final {
+  background: radial-gradient(ellipse, #21000b, #000 70%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+#final.show {
+  opacity: 1;
+  pointer-events: auto;
+  animation: finalIn 1s ease-out both;
+}
+
+@keyframes finalIn {
+  from { transform: scale(.75); }
+  to { transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div id="intro">
+  <h1>Seni sevaman,<br>Muslima ❤️</h1>
+  <p>BU YURAK FAQAT SEN UCHUN</p>
+</div>
+
+<div id="reader"></div>
+
+<div id="final">
+  <h1>Seni sevaman,<br>Muslima ❤️</h1>
+  <p>♥ SEN MENING YURAGIMDASAN ♥</p>
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const intro = document.getElementById("intro");
+const reader = document.getElementById("reader");
+const finalScreen = document.getElementById("final");
+
+let W, H, particles = [];
+let running = false;
+
+const words = [
+  "MUSLIMA", "SENI SEVAMAN", "MY LOVE",
+  "FOREVER", "MUSLIMA ❤️", "MY HEART",
+  "SEN MENING BAXTIMSAN", "ONLY YOU",
+  "I LOVE YOU", "GO'ZALIM", "♥",
+  "MY EVERYTHING", "JONIM", "LOVE",
+  "SEN MENING QUYOSHIMSAN", "MUSLIMA",
+  "SENI SEVAMAN", "YAGONAIMSAN"
+];
+
+function heart(t) {
+  return {
+    x: 16 * Math.pow(Math.sin(t), 3),
+    y: -(13 * Math.cos(t)
+       - 5 * Math.cos(2*t)
+       - 2 * Math.cos(3*t)
+       - Math.cos(4*t))
+  };
+}
+
+function resize() {
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth;
+  H = innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function createParticles() {
+  particles = [];
+  const scale = Math.min(W / 37, H / 32);
+  const cx = W / 2;
+  const cy = H * .49;
+  const count = 180;
+
+  for (let i = 0; i < count; i++) {
+    // Yurak konturi va ichki nuqtalar
+    const outline = i < 110;
+    let t, fill;
+
+    if (outline) {
+      t = (i / 110) * Math.PI * 2;
+      fill = 1;
+    } else {
+      t = Math.random() * Math.PI * 2;
+      fill = Math.sqrt(Math.random()) * .83;
+    }
+
+    const p = heart(t);
+
+    particles.push({
+      x: cx + p.x * scale * fill,
+      y: cy + p.y * scale * fill,
+      word: words[i % words.length],
+      size: 7 + Math.random() * 3,
+      outline,
+      order: i,
+      x0: Math.random() * W,
+      y0: Math.random() * H
+    });
+  }
+}
+
+function drawStars(time) {
+  for (let i = 0; i < 55; i++) {
+    const x = (i * 137.5) % W;
+    const y = (i * 83.7) % H;
+    ctx.fillStyle = `rgba(255,30,65,${.12 + .2 *
+      (1 + Math.sin(time / 400 + i)) / 2})`;
+    ctx.fillRect(x, y, 1.5, 1.5);
+  }
+}
+
+function animate(now) {
+  if (!running) return;
+
+  ctx.clearRect(0, 0, W, H);
+  drawStars(now);
+
+  const elapsed = (now - window.startTime) / 1000;
+  const scale = Math.min(W / 37, H / 32);
+  const cx = W / 2;
+  const cy = H * .49;
+
+  particles.forEach(p => {
+    // Har bir so'z o'qib bo'lingach o'z joyiga o'tadi
+    const start = 1.2 + p.order * .13;
+    const duration = 1.15;
+    const progress = Math.max(0, Math.min(1,
+      (elapsed - start) / duration));
+
+    const ease = progress * progress * (3 - 2 * progress);
+
+    let sx = p.x0;
+    let sy = p.order % 2 === 0 ? H + 50 : -50;
+
+    // So'z navbati kelganda uni markazda kattalashtirib ko'rsatish
+    const readStart = start - .8;
+    const readEnd = start + .25;
+    const isReading = elapsed >= readStart && elapsed < readEnd;
+
+    if (isReading && elapsed < 4.5) {
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "#ff244a";
+      ctx.shadowColor = "red";
+      ctx.shadowBlur = 25;
+      ctx.textAlign = "center";
+      ctx.font = `bold ${Math.min(36, W / 9)}px Arial`;
+      ctx.fillText(p.word, cx, H * .5);
+      ctx.restore();
+    }
+
+    const x = sx + (p.x - sx) * ease;
+    const y = sy + (p.y - sy) * ease;
+    const pulse = 1 + Math.sin(now / 350) * .012;
+
+    ctx.save();
+    ctx.globalAlpha = progress * .9;
+    ctx.fillStyle = p.outline ? "#ff163d" : "#e60030";
+    ctx.shadowColor = "#ff003c";
+    ctx.shadowBlur = p.outline ? 9 : 4;
+    ctx.textAlign = "center";
+    ctx.font = `bold ${p.size}px Arial`;
+    ctx.fillText(
+      p.word,
+      cx + (x - cx) * pulse,
+      cy + (y - cy) * pulse
+    );
+    ctx.restore();
+  });
+
+  if (elapsed > 7.5 && !window.finalShown) {
+    window.finalShown = true;
+    finalScreen.classList.add("show");
+  }
+
+  requestAnimationFrame(animate);
+}
+
+function start() {
+  if (running) return;
+  running = true;
+  window.startTime = performance.now();
+  window.finalShown = false;
+
+  resize();
+  createParticles();
+
+  setTimeout(() => intro.classList.add("hide"), 1500);
+  setTimeout(() => {
+    finalScreen.classList.remove("show");
+    finalScreen.classList.add("hide");
+  }, 10000);
+
+  requestAnimationFrame(animate);
+}
+
+window.addEventListener("resize", () => {
+  resize();
+  if (running) createParticles();
+});
+
+// Birinchi xabar 1,5 soniya ko'rinadi,
+// keyin so'zlar navbatma-navbat yurakka yig'iladi.
+setTimeout(start, 1500);
+</script>
+</body>
+</html>
